@@ -86,6 +86,41 @@ async function optimizePrompt(raw) {
 // Global flag to prevent multiple optimizations
 let isOptimizing = false;
 
+// Global event listener to block Enter keys during optimization
+document.addEventListener("keydown", (e) => {
+  if (isOptimizing && e.key === 'Enter') {
+    console.log("Blocking Enter key during optimization");
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    return false;
+  }
+}, true); // Use capture phase to intercept before other handlers
+
+// Block form submissions during optimization
+document.addEventListener("submit", (e) => {
+  if (isOptimizing) {
+    console.log("Blocking form submission during optimization");
+    e.preventDefault();
+    e.stopPropagation();
+    return false;
+  }
+}, true);
+
+// Block any click events on send buttons during optimization
+document.addEventListener("click", (e) => {
+  if (isOptimizing && (
+    e.target.matches('button[data-testid="send-button"]') ||
+    e.target.matches('button[aria-label*="Send"]') ||
+    e.target.matches('form button[type="submit"]')
+  )) {
+    console.log("Blocking send button click during optimization");
+    e.preventDefault();
+    e.stopPropagation();
+    return false;
+  }
+}, true);
+
 // Hotkey detection: Cmd/Ctrl + Shift + \ (backslash)
 document.addEventListener("keydown", async (e) => {
   console.log("Key pressed:", e.key, "Meta:", e.metaKey, "Ctrl:", e.ctrlKey, "Shift:", e.shiftKey);
@@ -133,16 +168,31 @@ document.addEventListener("keydown", async (e) => {
       sendBtn.style.opacity = '0.5';
     }
     
+    // Show "optimizing..." message to user
+    const optimizingMessage = "Optimizing...";
+    if (ta.tagName === 'TEXTAREA') {
+      setTextareaValue(ta, optimizingMessage);
+    } else if (ta.contentEditable === 'true') {
+      ta.textContent = optimizingMessage;
+      ta.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    
+    // Wait a moment to let the UI update
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     const improved = await optimizePrompt(original);
     console.log("Optimization complete:", improved);
     
-    // Replace content based on element type
+    // Replace content with optimized prompt
     if (ta.tagName === 'TEXTAREA') {
       setTextareaValue(ta, improved);
     } else if (ta.contentEditable === 'true') {
       ta.textContent = improved;
       ta.dispatchEvent(new Event('input', { bubbles: true }));
     }
+    
+    // Wait a moment to let the UI update
+    await new Promise(resolve => setTimeout(resolve, 100));
     
     // Re-enable the send button
     if (sendBtn) {
@@ -160,6 +210,14 @@ document.addEventListener("keydown", async (e) => {
     console.error("Optimization failed:", err);
     alert('Prompt optimization failed. Your original text is still here.');
     
+    // Restore original text on error
+    if (ta.tagName === 'TEXTAREA') {
+      setTextareaValue(ta, original);
+    } else if (ta.contentEditable === 'true') {
+      ta.textContent = original;
+      ta.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    
     // Re-enable the send button on error
     const { sendBtn } = getPromptElements();
     if (sendBtn) {
@@ -171,6 +229,50 @@ document.addEventListener("keydown", async (e) => {
   }
 });
 
+// MutationObserver to prevent automatic changes during optimization
+let optimizationObserver = null;
+
+function startOptimizationMonitoring() {
+  if (optimizationObserver) {
+    optimizationObserver.disconnect();
+  }
+  
+  optimizationObserver = new MutationObserver((mutations) => {
+    if (!isOptimizing) return;
+    
+    mutations.forEach((mutation) => {
+      if (mutation.type === 'childList') {
+        // Check if any new messages were added (indicating auto-send)
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            const messageElement = node.querySelector('[data-message-author-role="user"]');
+            if (messageElement && messageElement.textContent.includes('Optimizing...')) {
+              console.log("Detected auto-send of optimizing message, removing it");
+              node.remove();
+            }
+          }
+        });
+      }
+    });
+  });
+  
+  // Observe the chat container for new messages
+  const chatContainer = document.querySelector('[data-testid="conversation-turn-2"]')?.parentElement ||
+                       document.querySelector('[data-testid="conversation-turn-3"]')?.parentElement ||
+                       document.querySelector('main') ||
+                       document.body;
+  
+  if (chatContainer) {
+    optimizationObserver.observe(chatContainer, {
+      childList: true,
+      subtree: true
+    });
+  }
+}
+
 // Confirm extension is loaded
 console.log("ChatGPT Prompt Booster extension loaded!");
 console.log("Press Cmd+Shift+\\ (Mac) or Ctrl+Shift+\\ (Windows/Linux) to optimize prompts");
+
+// Start monitoring after a short delay to ensure DOM is ready
+setTimeout(startOptimizationMonitoring, 2000);
