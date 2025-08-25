@@ -88,6 +88,83 @@
         .github-link:hover {
             border-bottom-color: white;
         }
+
+        .status-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .status-label {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-bottom: 8px;
+        }
+
+        .status-indicator {
+            font-size: 18px;
+            font-weight: bold;
+            font-family: monospace;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 8px 12px;
+            border-radius: 6px;
+            display: inline-block;
+        }
+
+        .refresh-btn {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .refresh-btn:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .mode-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .mode-label {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-bottom: 8px;
+        }
+
+        .mode-select {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .mode-select:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .mode-description {
+            font-size: 12px;
+            opacity: 0.8;
+        }
     </style>
 </head>
 <body>
@@ -99,6 +176,29 @@
     <div class="hotkey">
         <div class="hotkey-label">Press this hotkey in ChatGPT:</div>
         <div class="hotkey-keys" id="hotkey-display">Cmd+Shift+\</div>
+    </div>
+    
+    <div class="status-section">
+        <div class="status-label">Extension Status:</div>
+        <div class="status-indicator" id="status-indicator">Checking...</div>
+        <button class="refresh-btn" id="refresh-btn">Refresh Status</button>
+    </div>
+    
+    <div class="mode-section">
+        <div class="mode-label">Optimization Mode:</div>
+        <select class="mode-select" id="mode-select">
+            <option value="standard">Standard</option>
+            <option value="concise">Concise</option>
+            <option value="deep-dive">Deep Dive</option>
+            <option value="creative">Creative</option>
+            <option value="technical">Technical</option>
+            <option value="academic">Academic</option>
+            <option value="business">Business</option>
+            <option value="educational">Educational</option>
+        </select>
+        <div class="mode-description" id="mode-description">
+            Balanced optimization with good structure and detail
+        </div>
     </div>
     
     <div class="instructions">
@@ -126,6 +226,82 @@
         } else {
             hotkeyDisplay.textContent = 'Ctrl+Shift+\\';
         }
+        
+        // Status checking functionality
+        const statusIndicator = document.getElementById('status-indicator');
+        const refreshBtn = document.getElementById('refresh-btn');
+        
+        // Mode selection functionality
+        const modeSelect = document.getElementById('mode-select');
+        const modeDescription = document.getElementById('mode-description');
+        
+        const modeDescriptions = {
+            'standard': 'Balanced optimization with good structure and detail',
+            'concise': 'Brief but complete responses with clear formatting',
+            'deep-dive': 'Comprehensive analysis with multiple perspectives',
+            'creative': 'Innovative thinking and alternative approaches',
+            'technical': 'Technical details, code examples, and specifications',
+            'academic': 'Scholarly analysis with formal language',
+            'business': 'Practical business insights and ROI focus',
+            'educational': 'Learning-focused explanations with examples'
+        };
+        
+        // Update mode description when selection changes
+        modeSelect.addEventListener('change', () => {
+            const selectedMode = modeSelect.value;
+            modeDescription.textContent = modeDescriptions[selectedMode] || 'Unknown mode';
+            
+            // Save mode preference to storage
+            chrome.storage.local.set({ 'optimization_mode': selectedMode });
+        });
+        
+        // Load saved mode preference
+        chrome.storage.local.get(['optimization_mode'], (result) => {
+            if (result.optimization_mode) {
+                modeSelect.value = result.optimization_mode;
+                modeDescription.textContent = modeDescriptions[result.optimization_mode] || 'Unknown mode';
+            }
+        });
+        
+        async function checkStatus() {
+            try {
+                // Check backend connection
+                const backendResponse = await fetch('http://localhost:8000/healthz', {
+                    method: 'GET',
+                    mode: 'no-cors'
+                });
+                
+                // Check extension context
+                if (chrome.runtime && chrome.runtime.sendMessage) {
+                    chrome.runtime.sendMessage({ type: "PING" }, (response) => {
+                        if (chrome.runtime.lastError) {
+                            statusIndicator.textContent = '❌ Extension Error';
+                            statusIndicator.style.color = '#ef4444';
+                        } else {
+                            statusIndicator.textContent = '✅ Working';
+                            statusIndicator.style.color = '#10b981';
+                        }
+                    });
+                } else {
+                    statusIndicator.textContent = '❌ Extension Error';
+                    statusIndicator.style.color = '#ef4444';
+                }
+            } catch (error) {
+                statusIndicator.textContent = '❌ Backend Error';
+                statusIndicator.style.color = '#ef4444';
+            }
+        }
+        
+        // Check status on load
+        checkStatus();
+        
+        // Handle refresh button click
+        refreshBtn.addEventListener('click', () => {
+            statusIndicator.textContent = 'Checking...';
+            statusIndicator.style.color = 'white';
+            checkStatus();
+        });
     </script>
 </body>
 </html>
+

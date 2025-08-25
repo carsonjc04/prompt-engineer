@@ -9,7 +9,7 @@ import json
 from unittest.mock import Mock, patch
 from fastapi.testclient import TestClient
 from app.main import app
-from app.optimizer import rewrite_prompt, SYSTEM_OPTIMIZER, OPTIMIZER_MODEL
+from app.optimizer import rewrite_prompt, OptimizationMode, get_available_modes
 from app.models import OptimizeRequest, OptimizeResponse
 from app.clients import get_openai
 
@@ -105,8 +105,17 @@ class TestOptimizerLogic:
         # Verify OpenAI API was called correctly
         mock_client.responses.create.assert_called_once()
         call_args = mock_client.responses.create.call_args
-        assert call_args[1]["model"] == OPTIMIZER_MODEL
-        assert call_args[1]["reasoning"]["effort"] == "low"
+        assert call_args[1]["model"] == "o1"
+        assert call_args[1]["reasoning"]["effort"] == "medium"
+    
+    def test_optimization_modes(self):
+        """Test that all optimization modes are available"""
+        modes = get_available_modes()
+        expected_modes = ["standard", "concise", "deep-dive", "creative", "technical", "academic", "business", "educational"]
+        
+        assert len(modes) == 8
+        for mode in expected_modes:
+            assert mode in modes
 
 
 class TestDataModels:
@@ -129,12 +138,28 @@ class TestDataModels:
     def test_optimize_response_validation(self):
         """Test OptimizeResponse model validation"""
         # Valid response
-        response = OptimizeResponse(improved_prompt="improved prompt")
+        response = OptimizeResponse(
+            improved_prompt="improved prompt",
+            mode_used="standard",
+            original_length=15,
+            optimized_length=25
+        )
         assert response.improved_prompt == "improved prompt"
+        assert response.mode_used == "standard"
+        assert response.original_length == 15
+        assert response.optimized_length == 25
         
         # Test with empty string
-        response = OptimizeResponse(improved_prompt="")
+        response = OptimizeResponse(
+            improved_prompt="",
+            mode_used="concise",
+            original_length=0,
+            optimized_length=0
+        )
         assert response.improved_prompt == ""
+        assert response.mode_used == "concise"
+        assert response.original_length == 0
+        assert response.optimized_length == 0
 
 
 class TestOpenAIClient:

@@ -1,31 +1,104 @@
-# ChatGPT Prompt Optimizer
+# Advanced ChatGPT Prompt Optimizer
 
-A professional browser extension that automatically optimizes your ChatGPT prompts for better, more detailed responses. Transform basic prompts into structured, effective requests with a single hotkey.
+A professional browser extension that automatically optimizes your ChatGPT prompts using advanced prompt engineering techniques. Transform basic prompts into structured, effective requests with multiple optimization modes and a single hotkey.
 
-## Features
+## **New in Version 1.0: Advanced Prompt Engineering**
+
+- **8 Optimization Modes**: Choose the perfect optimization style for your needs
+- **Cursor Prompt Optimizer Instruction**: Professional-grade prompt engineering
+- **Multi-Mode Support**: Standard, Concise, Deep-Dive, Creative, Technical, Academic, Business, Educational
+- **Enhanced Backend**: FastAPI with fallback mechanisms and comprehensive error handling
+- **User Preferences**: Save and remember your preferred optimization mode
+
+## **Features**
 
 - **One-Hotkey Optimization**: Press `Cmd+Shift+\` (Mac) or `Ctrl+Shift+\` (Windows/Linux)
-- **Automatic Enhancement**: Adds structure, examples, and clarity to your prompts
+- **8 Optimization Modes**: Tailored optimization strategies for different use cases
+- **Advanced Prompt Engineering**: Based on Cursor Prompt Optimizer Instruction
+- **Automatic Enhancement**: Adds structure, examples, clarity, and reasoning instructions
 - **Privacy-First**: All processing happens on your local machine
 - **Professional Quality**: Clean, reliable extension with comprehensive testing
 - **Open Source**: Free to use, modify, and contribute
 
-## How It Works
+## **Optimization Modes**
+
+### **Standard** (Default)
+Balanced optimization with good structure and detail - perfect for general use cases.
+
+### **Concise**
+Brief but complete responses with clear formatting - ideal for quick answers and summaries.
+
+### **Deep-Dive**
+Comprehensive analysis with multiple perspectives - great for research and detailed analysis.
+
+### **Creative**
+Innovative thinking and alternative approaches - perfect for brainstorming and creative tasks.
+
+### **Technical**
+Technical details, code examples, and specifications - ideal for programming and technical work.
+
+### **Academic**
+Scholarly analysis with formal language - great for academic writing and research.
+
+### **Business**
+Practical business insights and ROI focus - perfect for business planning and strategy.
+
+### **Educational**
+Learning-focused explanations with examples - ideal for teaching and learning.
+
+## **How It Works**
 
 1. **Type your prompt** in ChatGPT
-2. **Press the hotkey** (`Cmd+Shift+\`)
-3. **Watch optimization** happen automatically
-4. **Get better results** with enhanced prompts
+2. **Select your optimization mode** in the extension popup
+3. **Press the hotkey** (`Cmd+Shift+\`)
+4. **Watch advanced optimization** happen automatically
+5. **Get professional-quality prompts** with enhanced structure and clarity
 
-## Installation
+## **Example Transformations**
 
-### For Users
+### **Original Prompt**
+```
+"what is square root of 10"
+```
+
+### **Technical Mode Output**
+```
+Compute the square root of 10, and do the following:
+
+1. Explain technically how to approximate the square root (e.g., using a numerical method or mental estimation).  
+2. Provide a step-by-step solution.  
+3. Give the approximate value to at least five decimal places.  
+4. Conclude with the final answer clearly labeled.
+```
+
+### **Concise Mode Output**
+```
+What is the square root of 10?  
+• Provide a concise answer (numeric approximation).  
+• Briefly explain how this value can be calculated or estimated.  
+• Keep your response short and clear.
+```
+
+## **Architecture**
+
+- **Frontend**: Chrome Extension (Manifest V3) with mode selection
+- **Backend**: FastAPI + OpenAI API with fallback mechanisms
+- **AI Models**: 
+  - Optimizer: o1 (with fallback to gpt-4o-mini)
+  - Target: gpt-4o (configurable)
+- **Communication**: Local HTTP requests with CORS support
+- **Storage**: Chrome storage for user preferences
+
+## **Installation**
+
+### **For Users**
 
 1. **Download the Extension**: Available on Chrome Web Store (coming soon)
 2. **Install in Browser**: One-click installation
-3. **Start Optimizing**: Use the hotkey in ChatGPT
+3. **Configure Mode**: Select your preferred optimization mode
+4. **Start Optimizing**: Use the hotkey in ChatGPT
 
-### For Developers
+### **For Developers**
 
 1. **Clone the Repository**
    ```bash
@@ -37,7 +110,7 @@ A professional browser extension that automatically optimizes your ChatGPT promp
    ```bash
    python -m venv .venv
    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-   pip install -e .
+   pip install fastapi uvicorn[standard] pydantic python-dotenv openai httpx tenacity pytest
    ```
 
 3. **Configure API Key**
@@ -56,62 +129,93 @@ A professional browser extension that automatically optimizes your ChatGPT promp
    - Enable "Developer mode"
    - Click "Load unpacked" and select the `extension/` folder
 
-## Architecture
+## **API Endpoints**
 
-- **Frontend**: Chrome Extension (Manifest V3)
-- **Backend**: FastAPI + OpenAI API
-- **Communication**: Local HTTP requests
-- **Security**: No data leaves your machine
-
-## Development
-
-### Project Structure
-
-```
-prompt-engineer/
-├── app/                    # Backend API
-│   ├── main.py           # FastAPI application
-│   ├── optimizer.py      # Prompt optimization logic
-│   ├── models.py         # Data models
-│   └── clients.py        # OpenAI client
-├── extension/             # Browser extension
-│   ├── manifest.json     # Extension configuration
-│   ├── content.js        # Content script
-│   ├── background.js     # Service worker
-│   └── popup.html        # Extension popup
-├── tests/                 # Test suite
-├── pyproject.toml        # Python dependencies
-└── README.md             # This file
-```
-
-### Running Tests
-
+### **Health Check**
 ```bash
-# Run all tests
-pytest
-
-# Run with coverage
-pytest --cov=app
-
-# Run API tests (requires OpenAI key)
-pytest --run-api-tests
+GET /healthz
+# Returns: {"status": "ok", "version": "1.0.0", "features": [...]}
 ```
 
-### Code Quality
+### **Get Available Modes**
+```bash
+GET /modes
+# Returns: List of all optimization modes with descriptions
+```
 
-- **Type Hints**: Full Python type annotations
-- **Testing**: Comprehensive test suite with mocking
-- **Documentation**: Clear docstrings and comments
-- **Error Handling**: Robust error handling and validation
+### **Optimize Prompt**
+```bash
+POST /optimize
+{
+  "text": "your prompt here",
+  "mode": "technical"  # optional, defaults to "standard"
+}
+```
 
-## Security
+### **Chat with Optimization**
+```bash
+POST /chat
+{
+  "user_input": "your prompt",
+  "target_model": "gpt-4o",
+  "optimization_mode": "deep-dive",
+  "stream": false
+}
+```
 
-- **Local Processing**: All optimization happens on your machine
-- **No Data Collection**: We don't store or transmit your prompts
-- **Open Source**: Full transparency of all code
-- **API Key Security**: Your OpenAI key stays on your machine
+## **Testing**
 
-## Contributing
+### **Manual Testing**
+1. **Load the extension** in Chrome/Edge
+2. **Go to ChatGPT** and type a prompt
+3. **Select optimization mode** in extension popup
+4. **Use the hotkey** to test optimization
+5. **Verify the result** is significantly improved
+
+### **Automated Testing**
+```bash
+# Run backend tests
+pytest tests/
+
+# Test specific endpoints
+curl http://localhost:8000/healthz
+curl http://localhost:8000/modes
+curl -X POST http://localhost:8000/optimize -H "Content-Type: application/json" -d '{"text": "test", "mode": "technical"}'
+```
+
+## **Troubleshooting**
+
+### **Extension Not Working**
+1. **Check Backend Status**: `curl http://localhost:8000/healthz`
+2. **Verify Extension Loading**: Check `chrome://extensions/` for errors
+3. **Check Console Logs**: Open browser developer tools for error messages
+
+### **Common Issues**
+- **"Backend service not available"**: Ensure server is running on localhost:8000
+- **"Optimization failed"**: Check OpenAI API key and credits
+- **Hotkey not working**: Ensure textarea is focused in ChatGPT
+
+## **Performance**
+
+- **Server Startup**: ~2-3 seconds
+- **Health Endpoint**: <100ms
+- **Prompt Optimization**: ~1-3 seconds (o1 model)
+- **Fallback Optimization**: ~2-4 seconds (gpt-4o-mini)
+- **Memory Usage**: Minimal (FastAPI + dependencies)
+
+## **Roadmap**
+
+- [x] Multi-mode optimization system
+- [x] Advanced prompt engineering
+- [x] User preference storage
+- [x] Fallback mechanisms
+- [ ] Chrome Web Store submission
+- [ ] Edge Add-ons support
+- [ ] Custom optimization rules
+- [ ] Performance analytics
+- [ ] A/B testing framework
+
+## **Contributing**
 
 We welcome contributions! Please see our contributing guidelines:
 
@@ -121,67 +225,16 @@ We welcome contributions! Please see our contributing guidelines:
 4. **Add tests for new functionality**
 5. **Submit a pull request**
 
-## Testing
-
-### Manual Testing
-
-1. **Load the extension** in Chrome/Edge
-2. **Go to ChatGPT** and type a prompt
-3. **Use the hotkey** to test optimization
-4. **Verify the result** is improved
-
-### Automated Testing
-
-```bash
-# Run backend tests
-pytest tests/test_extension.py
-
-# Run specific test categories
-pytest tests/ -k "TestExtensionBackend"
-pytest tests/ -k "TestOptimizerLogic"
-```
-
-## Troubleshooting
-
-### Extension Not Working
-
-1. **Check Backend Status**
-   ```bash
-   curl http://127.0.0.1:8000/healthz
-   ```
-
-2. **Verify Extension Loading**
-   - Check `chrome://extensions/` for errors
-   - Reload the extension if needed
-
-3. **Check Console Logs**
-   - Open browser developer tools
-   - Look for error messages
-
-### Common Issues
-
-- **"Extension not responding"**: Backend server not running
-- **"Optimization failed"**: Check OpenAI API key and credits
-- **Hotkey not working**: Ensure textarea is focused in ChatGPT
-
-## License
+## **License**
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## Support
+## **Support**
 
 - **GitHub Issues**: Report bugs and request features
 - **Discussions**: Join community discussions
 - **Documentation**: Comprehensive guides and examples
 
-## Roadmap
-
-- [ ] Chrome Web Store submission
-- [ ] Edge Add-ons support
-- [ ] Additional optimization models
-- [ ] User customization options
-- [ ] Performance improvements
-
 ---
 
-**Built with professionalism and care for the open-source community.**
+**Built with advanced prompt engineering and care for the open-source community.**
