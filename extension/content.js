@@ -88,46 +88,42 @@ function reloadExtensionContext() {
   }
 }
 
-// Check if backend is available
-async function checkBackendConnection() {
-  try {
-    const response = await fetch('http://localhost:8000/healthz', {
-      method: 'GET',
-      mode: 'no-cors' // This will work even with CORS issues
+// Get OpenAI API key from storage or prompt user
+async function getOpenAIAPIKey() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(['openai_api_key'], (result) => {
+      if (result.openai_api_key) {
+        resolve(result.openai_api_key);
+      } else {
+        // Prompt user for API key
+        const apiKey = prompt("Please enter your OpenAI API key to use the prompt optimizer:");
+        if (apiKey && apiKey.trim()) {
+          // Save to storage
+          chrome.storage.local.set({ 'openai_api_key': apiKey.trim() });
+          resolve(apiKey.trim());
+        } else {
+          resolve(null);
+        }
+      }
     });
-    return true;
-  } catch (error) {
-    console.error('Backend connection check failed:', error);
-    return false;
-  }
+  });
 }
 
-// Show backend status
-async function showBackendStatus() {
-  const status = await checkBackendConnection();
-  if (status) {
-    console.log('✅ Backend service is available');
-  } else {
-    console.log('❌ Backend service is not available. Please start the server with: uvicorn app.main:app --reload --port 8000');
-  }
-  return status;
-}
-
-// Optimize prompt using the backend API
+// Optimize prompt using OpenAI API directly
 async function optimizePrompt(raw) {
   try {
-    // First check if backend is available
-    const backendAvailable = await checkBackendConnection();
-    if (!backendAvailable) {
-      throw new Error('Backend service not available. Please ensure the server is running on localhost:8000');
-    }
-
     // Get the selected optimization mode from storage
     const mode = await new Promise((resolve) => {
       chrome.storage.local.get(['optimization_mode'], (result) => {
         resolve(result.optimization_mode || 'standard');
       });
     });
+
+    // Get OpenAI API key
+    const apiKey = await getOpenAIAPIKey();
+    if (!apiKey) {
+      throw new Error('OpenAI API key is required for prompt optimization');
+    }
 
     // Try extension method first
     try {
@@ -140,12 +136,13 @@ async function optimizePrompt(raw) {
         // Add timeout to prevent hanging
         const timeout = setTimeout(() => {
           reject(new Error('Optimization request timed out'));
-        }, 30000); // 30 second timeout for o1 model processing
+        }, 30000); // 30 second timeout for API processing
 
         chrome.runtime.sendMessage({ 
           type: "OPTIMIZE_PROMPT", 
           text: raw,
-          mode: mode
+          mode: mode,
+          apiKey: apiKey
         }, (resp) => {
           clearTimeout(timeout);
           
@@ -169,22 +166,8 @@ async function optimizePrompt(raw) {
         });
       });
     } catch (extensionError) {
-      console.warn('Extension method failed, trying direct fetch:', extensionError);
-      
-      // Fallback to direct fetch
-      const response = await fetch('http://localhost:8000/optimize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: raw, mode: mode })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      console.log(`Direct fetch optimization successful using ${data.mode_used} mode`);
-      return data.improved_prompt || raw;
+      console.warn('Extension method failed:', extensionError);
+      throw extensionError;
     }
   } catch (error) {
     console.error('Error in optimizePrompt:', error);

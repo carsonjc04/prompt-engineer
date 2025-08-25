@@ -165,6 +165,58 @@
             font-size: 12px;
             opacity: 0.8;
         }
+
+        .api-key-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .api-key-label {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-bottom: 8px;
+        }
+
+        .api-key-input {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .api-key-input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .save-api-key-btn {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .save-api-key-btn:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .api-key-status {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -182,6 +234,13 @@
         <div class="status-label">Extension Status:</div>
         <div class="status-indicator" id="status-indicator">Checking...</div>
         <button class="refresh-btn" id="refresh-btn">Refresh Status</button>
+    </div>
+    
+    <div class="api-key-section">
+        <div class="api-key-label">OpenAI API Key:</div>
+        <input type="password" id="api-key-input" placeholder="Enter your OpenAI API key" class="api-key-input">
+        <button class="save-api-key-btn" id="save-api-key-btn">Save Key</button>
+        <div class="api-key-status" id="api-key-status">No API key set</div>
     </div>
     
     <div class="mode-section">
@@ -263,31 +322,53 @@
             }
         });
         
+        // API key management functionality
+        const apiKeyInput = document.getElementById('api-key-input');
+        const saveApiKeyBtn = document.getElementById('save-api-key-btn');
+        const apiKeyStatus = document.getElementById('api-key-status');
+        
+        // Load saved API key
+        chrome.storage.local.get(['openai_api_key'], (result) => {
+            if (result.openai_api_key) {
+                apiKeyInput.value = result.openai_api_key;
+                apiKeyStatus.textContent = 'API key saved';
+                apiKeyStatus.style.color = '#10b981';
+            }
+        });
+        
+        // Save API key button handler
+        saveApiKeyBtn.addEventListener('click', () => {
+            const apiKey = apiKeyInput.value.trim();
+            if (apiKey) {
+                chrome.storage.local.set({ 'openai_api_key': apiKey }, () => {
+                    apiKeyStatus.textContent = 'API key saved successfully!';
+                    apiKeyStatus.style.color = '#10b981';
+                });
+            } else {
+                apiKeyStatus.textContent = 'Please enter a valid API key';
+                apiKeyStatus.style.color = '#ef4444';
+            }
+        });
+        
         async function checkStatus() {
             try {
-                // Check backend connection
-                const backendResponse = await fetch('http://localhost:8000/healthz', {
-                    method: 'GET',
-                    mode: 'no-cors'
-                });
-                
                 // Check extension context
                 if (chrome.runtime && chrome.runtime.sendMessage) {
                     chrome.runtime.sendMessage({ type: "PING" }, (response) => {
                         if (chrome.runtime.lastError) {
-                            statusIndicator.textContent = '❌ Extension Error';
+                            statusIndicator.textContent = 'Extension Error';
                             statusIndicator.style.color = '#ef4444';
                         } else {
-                            statusIndicator.textContent = '✅ Working';
+                            statusIndicator.textContent = 'Working';
                             statusIndicator.style.color = '#10b981';
                         }
                     });
                 } else {
-                    statusIndicator.textContent = '❌ Extension Error';
+                    statusIndicator.textContent = 'Extension Error';
                     statusIndicator.style.color = '#ef4444';
                 }
             } catch (error) {
-                statusIndicator.textContent = '❌ Backend Error';
+                statusIndicator.textContent = 'Extension Error';
                 statusIndicator.style.color = '#ef4444';
             }
         }
