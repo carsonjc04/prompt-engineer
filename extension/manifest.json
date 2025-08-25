@@ -9,9 +9,7 @@
     "128": "icon128.png"
   },
   "permissions": ["activeTab", "scripting", "storage"],
-  "host_permissions": [
-    "https://api.openai.com/*"
-  ],
+  "host_permissions": ["http://localhost:8000/*"],
   "background": {
     "service_worker": "background.js"
   },
