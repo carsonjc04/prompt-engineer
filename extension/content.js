@@ -122,12 +122,9 @@ async function optimizePrompt(raw) {
       throw new Error('Backend service not available. Please ensure the server is running on localhost:8000');
     }
 
-    // Get the selected optimization mode from storage
-    const mode = await new Promise((resolve) => {
-      chrome.storage.local.get(['optimization_mode'], (result) => {
-        resolve(result.optimization_mode || 'standard');
-      });
-    });
+    // Use the real-time mode variable instead of fetching from storage
+    const mode = currentOptimizationMode;
+    console.log(`Using optimization mode: ${mode}`);
 
     // Try extension method first
     try {
@@ -197,6 +194,81 @@ async function optimizePrompt(raw) {
 let isOptimizing = false;
 let retryCount = 0;
 const MAX_RETRIES = 3;
+
+// Current optimization mode (will be updated in real-time)
+let currentOptimizationMode = 'standard';
+
+// Monitor storage changes for real-time mode updates
+function initializeModeMonitoring() {
+  // Get initial mode
+  chrome.storage.local.get(['optimization_mode'], (result) => {
+    currentOptimizationMode = result.optimization_mode || 'standard';
+    console.log('Initial optimization mode:', currentOptimizationMode);
+  });
+  
+  // Listen for storage changes
+  chrome.storage.onChanged.addListener((changes, namespace) => {
+    if (namespace === 'local' && changes.optimization_mode) {
+      const newMode = changes.optimization_mode.newValue;
+      currentOptimizationMode = newMode || 'standard';
+      console.log('Optimization mode updated to:', currentOptimizationMode);
+      
+      // Show user feedback about mode change
+      showModeChangeNotification(newMode);
+    }
+  });
+}
+
+// Show notification when mode changes
+function showModeChangeNotification(mode) {
+  // Create a temporary notification
+  const notification = document.createElement('div');
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 10000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+  `;
+  
+  const modeNames = {
+    'standard': 'Standard',
+    'concise': 'Concise', 
+    'deep-dive': 'Deep Dive',
+    'creative': 'Creative',
+    'technical': 'Technical',
+    'academic': 'Academic',
+    'business': 'Business',
+    'educational': 'Educational'
+  };
+  
+  notification.textContent = `Mode switched to: ${modeNames[mode] || mode}`;
+  document.body.appendChild(notification);
+  
+  // Animate in
+  setTimeout(() => {
+    notification.style.transform = 'translateX(0)';
+  }, 100);
+  
+  // Remove after 3 seconds
+  setTimeout(() => {
+    notification.style.transform = 'translateX(100%)';
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
+    }, 300);
+  }, 3000);
+}
 
 // Global event listener to block Enter keys during optimization
 document.addEventListener("keydown", (e) => {
@@ -463,6 +535,9 @@ function startHealthCheck() {
 // Confirm extension is loaded
 console.log("ChatGPT Prompt Booster extension loaded!");
 console.log("Press Cmd+Shift+\\ (Mac) or Ctrl+Shift+\\ (Windows/Linux) to optimize prompts");
+
+// Initialize mode monitoring for real-time updates
+initializeModeMonitoring();
 
 // Check backend status on load
 setTimeout(async () => {
