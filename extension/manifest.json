@@ -1,8 +1,13 @@
 {
   "manifest_version": 3,
-  "name": "ChatGPT Prompt Booster (Hotkey)",
-  "version": "0.1.0",
-  "description": "Rewrite your ChatGPT prompt before sending (Cmd/Ctrl+Shift+\\).",
+  "name": "ChatGPT Prompt Optimizer",
+  "version": "1.0.0",
+  "description": "Automatically optimize your ChatGPT prompts for better, more detailed responses. One hotkey transforms basic prompts into structured, effective requests.",
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
   "permissions": ["activeTab", "scripting"],
   "host_permissions": ["http://localhost:8000/*"],
   "background": {
@@ -14,5 +19,11 @@
       "js": ["content.js"],
       "run_at": "document_idle"
     }
-  ]
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "ChatGPT Prompt Optimizer"
+  },
+  "author": "Open Source Community",
+  "homepage_url": "https://github.com/carsonjc04/prompt-engineer"
 }

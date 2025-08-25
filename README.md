@@ -1,198 +1,168 @@
-# Prompt Optimizer - ChatGPT Enhancement Tool
+# ChatGPT Prompt Optimizer
 
-A sophisticated tool that automatically optimizes your prompts before sending them to ChatGPT, resulting in better, more structured responses.
-
-## Overview
-
-This project consists of two main components:
-
-1. **FastAPI Backend**: A local server that uses OpenAI's Responses API to rewrite and improve prompts
-2. **Browser Extension**: A Chrome/Edge extension that integrates seamlessly with ChatGPT
+A professional browser extension that automatically optimizes your ChatGPT prompts for better, more detailed responses. Transform basic prompts into structured, effective requests with a single hotkey.
 
 ## Features
 
-- **Intelligent Prompt Optimization**: Automatically restructures prompts for clarity and completeness
-- **Seamless Integration**: Works directly within the ChatGPT interface
-- **Hotkey Activation**: Simple keyboard shortcut for instant optimization
-- **Local Processing**: All optimization happens on your local machine
-- **Cost Effective**: Uses efficient models for optimization while maintaining quality
+- **One-Hotkey Optimization**: Press `Cmd+Shift+\` (Mac) or `Ctrl+Shift+\` (Windows/Linux)
+- **Automatic Enhancement**: Adds structure, examples, and clarity to your prompts
+- **Privacy-First**: All processing happens on your local machine
+- **Professional Quality**: Clean, reliable extension with comprehensive testing
+- **Open Source**: Free to use, modify, and contribute
 
-## Architecture
+## How It Works
 
-```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   ChatGPT UI    │    │  Browser         │    │  FastAPI        │
-│                 │◄──►│  Extension       │◄──►│  Backend        │
-│                 │    │                  │    │                 │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-```
+1. **Type your prompt** in ChatGPT
+2. **Press the hotkey** (`Cmd+Shift+\`)
+3. **Watch optimization** happen automatically
+4. **Get better results** with enhanced prompts
 
-## Quick Start
+## Installation
 
-### Backend Setup
+### For Users
 
-1. **Clone the repository**
+1. **Download the Extension**: Available on Chrome Web Store (coming soon)
+2. **Install in Browser**: One-click installation
+3. **Start Optimizing**: Use the hotkey in ChatGPT
+
+### For Developers
+
+1. **Clone the Repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/carsonjc04/prompt-engineer.git
    cd prompt-engineer
    ```
 
-2. **Set up Python environment**
+2. **Set Up Environment**
    ```bash
    python -m venv .venv
    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
    pip install -e .
    ```
 
-3. **Configure environment variables**
+3. **Configure API Key**
    ```bash
-   cp .env.example .env
-   # Edit .env and add your OPENAI_API_KEY
+   cp env.template .env
+   # Edit .env and add your OpenAI API key
    ```
 
-4. **Start the server**
+4. **Start Backend Server**
    ```bash
    uvicorn app.main:app --reload --port 8000
    ```
 
-5. **Verify installation**
-   ```bash
-   curl http://127.0.0.1:8000/healthz
-   # Should return: {"status": "ok"}
-   ```
+5. **Load Extension**
+   - Open Chrome/Edge and go to `chrome://extensions/`
+   - Enable "Developer mode"
+   - Click "Load unpacked" and select the `extension/` folder
 
-### Extension Setup
+## Architecture
 
-1. **Load the extension**
-   - Open `chrome://extensions/` or `edge://extensions/`
-   - Enable **Developer mode**
-   - Click **Load unpacked**
-   - Select the `extension/` folder
-
-2. **Navigate to ChatGPT**
-   - Go to `https://chatgpt.com`
-   - Type a prompt
-   - Press `Cmd+Shift+\` (Mac) or `Ctrl+Shift+\` (Windows/Linux)
-
-## API Endpoints
-
-### Health Check
-```bash
-GET /healthz
-# Returns: {"status": "ok"}
-```
-
-### Optimize Prompt
-```bash
-POST /optimize
-Content-Type: application/json
-
-{
-  "text": "your prompt here"
-}
-
-# Returns: {"improved_prompt": "optimized version"}
-```
-
-### Full Chat (Optional)
-```bash
-POST /chat
-Content-Type: application/json
-
-{
-  "user_input": "your prompt",
-  "target_model": "gpt-5",
-  "stream": false,
-  "reasoning_effort": "medium"
-}
-
-# Returns: {"improved_prompt": "...", "final_answer": "..."}
-```
-
-## Configuration
-
-### Environment Variables
-
-- `OPENAI_API_KEY`: Your OpenAI API key (required)
-- `OPENAI_PROJECT`: OpenAI project ID (optional)
-
-### Extension Configuration
-
-To change the backend URL, edit `extension/background.js` and modify the `OPTIMIZER_URL` constant.
+- **Frontend**: Chrome Extension (Manifest V3)
+- **Backend**: FastAPI + OpenAI API
+- **Communication**: Local HTTP requests
+- **Security**: No data leaves your machine
 
 ## Development
 
 ### Project Structure
+
 ```
 prompt-engineer/
-├── app/                    # FastAPI application
-│   ├── main.py            # Main application entry point
-│   ├── models.py          # Pydantic data models
-│   ├── optimizer.py       # Prompt optimization logic
-│   └── clients.py         # OpenAI client management
-├── extension/              # Browser extension
-│   ├── manifest.json      # Extension manifest
-│   ├── background.js      # Service worker
-│   ├── content.js         # Content script
-│   └── README.md          # Extension documentation
-├── tests/                  # Test suite
-├── .env.example           # Environment template
-├── .gitignore             # Git ignore rules
-├── pyproject.toml         # Python project configuration
-└── README.md              # This file
+├── app/                    # Backend API
+│   ├── main.py           # FastAPI application
+│   ├── optimizer.py      # Prompt optimization logic
+│   ├── models.py         # Data models
+│   └── clients.py        # OpenAI client
+├── extension/             # Browser extension
+│   ├── manifest.json     # Extension configuration
+│   ├── content.js        # Content script
+│   ├── background.js     # Service worker
+│   └── popup.html        # Extension popup
+├── tests/                 # Test suite
+├── pyproject.toml        # Python dependencies
+└── README.md             # This file
 ```
 
 ### Running Tests
+
 ```bash
-pytest -v
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=app
+
+# Run API tests (requires OpenAI key)
+pytest --run-api-tests
 ```
 
 ### Code Quality
-- **Python**: 3.11+ with type hints
-- **Frontend**: Vanilla JavaScript (no frameworks)
-- **API**: FastAPI with Pydantic validation
-- **Testing**: pytest with comprehensive coverage
 
-## Troubleshooting
-
-### Common Issues
-
-1. **API Key Errors**
-   - Ensure `OPENAI_API_KEY` is set in your `.env` file
-   - Verify the API key has sufficient credits
-
-2. **Extension Not Working**
-   - Check that the backend server is running
-   - Verify the extension is loaded in developer mode
-   - Check browser console for error messages
-
-3. **CORS Issues**
-   - The backend is configured to allow all origins
-   - Ensure you're accessing from the correct localhost URL
-
-### Debug Mode
-
-Enable detailed logging by checking the browser console when using the extension.
-
-## Performance
-
-- **Optimization Speed**: Typically 1-3 seconds per prompt
-- **Memory Usage**: Minimal overhead
-- **Network**: Only local communication between extension and backend
+- **Type Hints**: Full Python type annotations
+- **Testing**: Comprehensive test suite with mocking
+- **Documentation**: Clear docstrings and comments
+- **Error Handling**: Robust error handling and validation
 
 ## Security
 
-- **Local Processing**: All data stays on your machine
-- **No External Calls**: Extension only communicates with localhost
-- **API Key Protection**: Stored securely in environment variables
+- **Local Processing**: All optimization happens on your machine
+- **No Data Collection**: We don't store or transmit your prompts
+- **Open Source**: Full transparency of all code
+- **API Key Security**: Your OpenAI key stays on your machine
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Submit a pull request
+We welcome contributions! Please see our contributing guidelines:
+
+1. **Fork the repository**
+2. **Create a feature branch**
+3. **Make your changes**
+4. **Add tests for new functionality**
+5. **Submit a pull request**
+
+## Testing
+
+### Manual Testing
+
+1. **Load the extension** in Chrome/Edge
+2. **Go to ChatGPT** and type a prompt
+3. **Use the hotkey** to test optimization
+4. **Verify the result** is improved
+
+### Automated Testing
+
+```bash
+# Run backend tests
+pytest tests/test_extension.py
+
+# Run specific test categories
+pytest tests/ -k "TestExtensionBackend"
+pytest tests/ -k "TestOptimizerLogic"
+```
+
+## Troubleshooting
+
+### Extension Not Working
+
+1. **Check Backend Status**
+   ```bash
+   curl http://127.0.0.1:8000/healthz
+   ```
+
+2. **Verify Extension Loading**
+   - Check `chrome://extensions/` for errors
+   - Reload the extension if needed
+
+3. **Check Console Logs**
+   - Open browser developer tools
+   - Look for error messages
+
+### Common Issues
+
+- **"Extension not responding"**: Backend server not running
+- **"Optimization failed"**: Check OpenAI API key and credits
+- **Hotkey not working**: Ensure textarea is focused in ChatGPT
 
 ## License
 
@@ -200,11 +170,18 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Support
 
-For issues, questions, or contributions:
-- Check the troubleshooting section
-- Review the console logs
-- Open an issue on the repository
+- **GitHub Issues**: Report bugs and request features
+- **Discussions**: Join community discussions
+- **Documentation**: Comprehensive guides and examples
+
+## Roadmap
+
+- [ ] Chrome Web Store submission
+- [ ] Edge Add-ons support
+- [ ] Additional optimization models
+- [ ] User customization options
+- [ ] Performance improvements
 
 ---
 
-**Note**: This tool is designed for personal use and development. Ensure compliance with OpenAI's terms of service and usage policies.
+**Built with professionalism and care for the open-source community.**
