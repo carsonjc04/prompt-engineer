@@ -108,7 +108,9 @@ async function showBackendStatus() {
   if (status) {
     console.log('✅ Backend service is available');
   } else {
-    console.log('❌ Backend service is not available. Please start the server with: uvicorn app.main:app --reload --port 8000');
+    console.log('❌ Backend service is not available.');
+    console.log('🚀 To start the server, run: ./start_backend.sh');
+    console.log('📖 Or manually: python3 -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload');
   }
   return status;
 }
@@ -119,7 +121,7 @@ async function optimizePrompt(raw) {
     // First check if backend is available
     const backendAvailable = await checkBackendConnection();
     if (!backendAvailable) {
-      throw new Error('Backend service not available. Please ensure the server is running on localhost:8000');
+      throw new Error('Backend service not available. Run ./start_backend.sh to start the server');
     }
 
     // Use the real-time mode variable instead of fetching from storage
@@ -203,20 +205,26 @@ function initializeModeMonitoring() {
   // Get initial mode
   chrome.storage.local.get(['optimization_mode'], (result) => {
     currentOptimizationMode = result.optimization_mode || 'standard';
-    console.log('Initial optimization mode:', currentOptimizationMode);
+    console.log('🔧 Initial optimization mode loaded:', currentOptimizationMode);
   });
   
   // Listen for storage changes
   chrome.storage.onChanged.addListener((changes, namespace) => {
     if (namespace === 'local' && changes.optimization_mode) {
       const newMode = changes.optimization_mode.newValue;
+      const oldMode = currentOptimizationMode;
       currentOptimizationMode = newMode || 'standard';
-      console.log('Optimization mode updated to:', currentOptimizationMode);
+      console.log(`🔄 Optimization mode changed: ${oldMode} → ${currentOptimizationMode}`);
       
       // Show user feedback about mode change
       showModeChangeNotification(newMode);
+      
+      // Also log to console for debugging
+      console.log(`✅ Mode updated successfully. Current mode: ${currentOptimizationMode}`);
     }
   });
+  
+  console.log('🔧 Mode monitoring initialized');
 }
 
 // Show notification when mode changes
@@ -438,7 +446,7 @@ document.addEventListener("keydown", async (e) => {
     // Provide more specific error messages
     let errorMessage = 'Prompt optimization failed. ';
     if (err.message.includes('Backend service not available')) {
-      errorMessage += 'Please ensure the backend server is running on localhost:8000.';
+      errorMessage += 'Run ./start_backend.sh to start the server, or manually: python3 -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload';
     } else if (err.message.includes('timeout')) {
       errorMessage += 'Request timed out. The o1 model can take up to 30 seconds for complex optimizations. Please try again.';
     } else if (err.message.includes('Extension runtime not available')) {
@@ -547,3 +555,19 @@ setTimeout(async () => {
 
 // Start monitoring after a short delay to ensure DOM is ready
 setTimeout(startOptimizationMonitoring, 2000);
+
+// Debug function to check current mode status (call from console)
+function debugModeStatus() {
+  console.log('🔍 === MODE DEBUG INFO ===');
+  console.log('Current optimization mode variable:', currentOptimizationMode);
+  
+  chrome.storage.local.get(['optimization_mode'], (result) => {
+    console.log('Stored optimization mode:', result.optimization_mode || 'standard');
+    console.log('Mode monitoring active:', !!chrome.storage.onChanged);
+    console.log('Extension runtime available:', !!chrome.runtime);
+    console.log('================================');
+  });
+}
+
+// Make debug function available globally
+window.debugPromptOptimizer = debugModeStatus;

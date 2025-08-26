@@ -165,6 +165,65 @@
             font-size: 12px;
             opacity: 0.8;
         }
+
+        .save-mode-btn {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .save-mode-btn:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .mode-status {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-top: 10px;
+        }
+
+        .test-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .test-label {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-bottom: 8px;
+        }
+
+        .test-mode-btn {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .test-mode-btn:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .test-result {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-top: 8px;
+        }
     </style>
 </head>
 <body>
@@ -196,9 +255,17 @@
             <option value="business">Business</option>
             <option value="educational">Educational</option>
         </select>
+        <button class="save-mode-btn" id="save-mode-btn">Save Mode</button>
         <div class="mode-description" id="mode-description">
             Balanced optimization with good structure and detail
         </div>
+        <div class="mode-status" id="mode-status">Mode: Standard (Active)</div>
+    </div>
+    
+    <div class="test-section">
+        <div class="test-label">Test Current Mode:</div>
+        <button class="test-mode-btn" id="test-mode-btn">Test Mode</button>
+        <div class="test-result" id="test-result">Click to test current mode</div>
     </div>
     
     <div class="instructions">
@@ -234,6 +301,12 @@
         // Mode selection functionality
         const modeSelect = document.getElementById('mode-select');
         const modeDescription = document.getElementById('mode-description');
+        const saveModeBtn = document.getElementById('save-mode-btn');
+        const modeStatus = document.getElementById('mode-status');
+        
+        // Test mode functionality
+        const testModeBtn = document.getElementById('test-mode-btn');
+        const testResult = document.getElementById('test-result');
         
         const modeDescriptions = {
             'standard': 'Balanced optimization with good structure and detail',
@@ -250,9 +323,7 @@
         modeSelect.addEventListener('change', () => {
             const selectedMode = modeSelect.value;
             modeDescription.textContent = modeDescriptions[selectedMode] || 'Unknown mode';
-            
-            // Save mode preference to storage
-            chrome.storage.local.set({ 'optimization_mode': selectedMode });
+            modeStatus.textContent = `Mode: ${selectedMode} (Selected)`;
         });
         
         // Load saved mode preference
@@ -260,7 +331,39 @@
             if (result.optimization_mode) {
                 modeSelect.value = result.optimization_mode;
                 modeDescription.textContent = modeDescriptions[result.optimization_mode] || 'Unknown mode';
+                modeStatus.textContent = `Mode: ${result.optimization_mode} (Active)`;
             }
+        });
+        
+        // Save mode preference on button click
+        saveModeBtn.addEventListener('click', () => {
+            const selectedMode = modeSelect.value;
+            modeDescription.textContent = modeDescriptions[selectedMode] || 'Unknown mode';
+            modeStatus.textContent = `Mode: ${selectedMode} (Active)`;
+            chrome.storage.local.set({ 'optimization_mode': selectedMode }, () => {
+                testResult.textContent = `Mode "${selectedMode}" saved successfully!`;
+                testResult.style.color = '#10b981';
+            });
+        });
+        
+        // Test current mode functionality
+        testModeBtn.addEventListener('click', () => {
+            chrome.storage.local.get(['optimization_mode'], (result) => {
+                const currentMode = result.optimization_mode || 'standard';
+                testResult.textContent = `Current active mode: ${currentMode}`;
+                testResult.style.color = '#3b82f6';
+                
+                // Also test if the extension can communicate
+                chrome.runtime.sendMessage({ type: "PING" }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        testResult.textContent += ' (Extension communication failed)';
+                        testResult.style.color = '#ef4444';
+                    } else {
+                        testResult.textContent += ' (Extension working)';
+                        testResult.style.color = '#10b981';
+                    }
+                });
+            });
         });
         
         async function checkStatus() {
